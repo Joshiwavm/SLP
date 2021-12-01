@@ -1,5 +1,6 @@
 from tqdm import tqdm
 import numpy as np
+from IPython.display import clear_output
 
 class SLP():
     """
@@ -13,7 +14,8 @@ class SLP():
     
     """
     
-    def __init__(self, cube, mask, amount = 1000):
+    def __init__(self, cube, mask, amount = 200, visualize = False):
+        self.visualize = visualize
         self.cube   = cube
         self.mask   = mask
         self.amount = amount
@@ -25,7 +27,6 @@ class SLP():
         self.mask_size = int(np.sum(self.mask)**0.5+0.1*self.cube.shape[-2]) # --> quick fix
 
     def _position(self):
-
         idx  = 0
         seed = 0
         pos  = []
@@ -62,17 +63,25 @@ class SLP():
     def _estimate_slp(self):
         return np.nansum(self.cube*self.mask, axis = (1,2))
 
-
+    def _visualize(self, masks):
+        
+        for idx, m in enumerate(masks):
+            clear_output(True)
+            plt.imshow(m)
+            plt.show()
+            if idx>30: break
+    
     def execute(self):
 
         bootstrap_std = []
         for i in tqdm(range(len(self.cube))):
             self.im = self.cube[i]
             pos     = self._position()
-            masks   = self._make_mask(pos)
+            masks   = self._make_mask(pos)            
             bootstrap_std.append(self._estimate_std(masks))
             
         slp = self._estimate_slp()
 
-            
+        if self.visualize: self._visualize(masks)
+
         return slp, np.array(bootstrap_std)
