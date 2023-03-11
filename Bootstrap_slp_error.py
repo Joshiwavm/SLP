@@ -28,22 +28,16 @@ class SLP():
         self.mask_size = int(np.sum(self.mask)**0.5+0.1*self.cube.shape[-2]) # --> quick fix
 
     def _position(self):
-        idx  = 0
-        seed = 0
-        pos  = []
-        while idx < self.amount:
-            np.random.seed(seed)
-            seed +=1 
-            
-            x, y = np.random.uniform(self.mask_size//2, self.im.shape[-1] - self.mask_size//2, size = 2).astype(np.int) 
-            dist = self.rr[x,y]
-            
-            if dist > 0.1*self.im.shape[-2]: #accept mask --> quick fix
-                pos.append([x,y])
-                idx +=1
-        
-        return np.vstack(([int(self.CoM_mask[0]), int(self.CoM_mask[1])], pos))
 
+        r =  np.sqrt(np.random.uniform(0.1,1, size = self.amount))
+        theta = np.random.uniform(0,1, size = self.amount) * 2 * np.pi
+
+        x = self.CoM_mask[0] + self.cube.shape[1]/3*r * np.cos(theta) #hard coded
+        y = self.CoM_mask[1] + self.cube.shape[1]/3*r * np.sin(theta) #hard coded
+        
+        pos = np.array([x,y], dtype = np.int).T
+        return np.vstack(([int(self.CoM_mask[0]), int(self.CoM_mask[1])], pos))
+    
     def _make_mask(self, pos):
         new_masks = np.zeros((len(pos[1:]),self.im.shape[-2], self.im.shape[-1]))
         for idx, xy in enumerate(pos[1:]):
