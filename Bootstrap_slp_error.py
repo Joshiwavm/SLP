@@ -32,12 +32,12 @@ class SLP():
         r =  np.sqrt(np.random.uniform(0.1,1, size = self.amount))
         theta = np.random.uniform(0,1, size = self.amount) * 2 * np.pi
 
-        x = self.CoM_mask[0] + self.cube.shape[1]/3*r * np.cos(theta) #hard coded
-        y = self.CoM_mask[1] + self.cube.shape[1]/3*r * np.sin(theta) #hard coded
+        x = self.CoM_mask[0] + self.cube.shape[1]/3 *r* np.cos(theta) #hard coded
+        y = self.CoM_mask[1] + self.cube.shape[1]/3 *r* np.sin(theta) #hard coded
         
         pos = np.array([x,y], dtype = np.int).T
         return np.vstack(([int(self.CoM_mask[0]), int(self.CoM_mask[1])], pos))
-    
+
     def _make_mask(self, pos):
         new_masks = np.zeros((len(pos[1:]),self.im.shape[-2], self.im.shape[-1]))
         for idx, xy in enumerate(pos[1:]):
@@ -47,36 +47,34 @@ class SLP():
                                                                                    pos[0][1]-self.mask_size//2:pos[0][1]+self.mask_size//2]
             
             
-        return new_masks.astype(bool)    
+        return new_masks.astype(bool)  
     
-    def _estimate_std(self, new_masks):
+    def _estimates(self, new_masks):
         estimates = []
         for m in new_masks:
-            estimates.append(np.sum(self.im * m))
-        return np.std(estimates)
+            estimates.append(np.sum(self.im[m]))
+        return np.nanstd(estimates), np.nanmean(estimates)
     
-    def _estimate_slp(self):
-        return np.nansum(self.cube*self.mask, axis = (1,2))
-
     def _visualize(self, masks):
-        
         for idx, m in enumerate(masks):
             clear_output(True)
-            plt.imshow(m)
+            plt.imshow(m, origin='lower')
             plt.show()
             if idx>30: break
     
     def execute(self):
 
         bootstrap_std = []
+        bootstrap_means = []
         for i in tqdm(range(len(self.cube))):
             self.im = self.cube[i]
             pos     = self._position()
             masks   = self._make_mask(pos)            
-            bootstrap_std.append(self._estimate_std(masks))
-            
-        slp = self._estimate_slp()
 
+            std, mean = self._estimates(masks)
+            bootstrap_std.append(std)
+            bootstrap_means.append(mean)
+            
         if self.visualize: self._visualize(masks)
 
-        return slp, np.array(bootstrap_std)
+        return np.array(bootstrap_std), np.array(bootstrap_means)
